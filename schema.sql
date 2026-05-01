@@ -17,4 +17,11 @@ CREATE TABLE IF NOT EXISTS visits (
   count INTEGER DEFAULT 0
 );
 
+CREATE TABLE IF NOT EXISTS images (
+  filename TEXT PRIMARY KEY,
+  data TEXT NOT NULL,
+  contentType TEXT DEFAULT 'image/png',
+  createdAt TEXT
+);
+
 INSERT OR IGNORE INTO visits (id, count) VALUES (1, 0);

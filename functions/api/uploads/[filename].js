@@ -2,15 +2,24 @@ export async function onRequestGet(context) {
   const { env, params } = context;
   const { filename } = params;
 
-  const object = await env.R2.get(filename);
+  const image = await env.DB.prepare(
+    'SELECT data, contentType FROM images WHERE filename = ?'
+  ).bind(filename).first();
 
-  if (!object) {
+  if (!image) {
     return new Response('图片不存在', { status: 404 });
   }
 
-  const headers = new Headers();
-  headers.set('Content-Type', object.httpMetadata?.contentType || 'application/octet-stream');
-  headers.set('Cache-Control', 'public, max-age=31536000');
+  const binaryStr = atob(image.data);
+  const bytes = new Uint8Array(binaryStr.length);
+  for (let i = 0; i < binaryStr.length; i++) {
+    bytes[i] = binaryStr.charCodeAt(i);
+  }
 
-  return new Response(object.body, { headers });
+  return new Response(bytes, {
+    headers: {
+      'Content-Type': image.contentType || 'image/png',
+      'Cache-Control': 'public, max-age=31536000',
+    },
+  });
 }

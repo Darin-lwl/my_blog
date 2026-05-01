@@ -20,10 +20,13 @@ export async function onRequestPost(context) {
   }
 
   const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const buffer = await file.arrayBuffer();
+  const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+  const now = new Date().toISOString();
 
-  await env.R2.put(filename, file.stream(), {
-    httpMetadata: { contentType: file.type },
-  });
+  await env.DB.prepare(
+    'INSERT INTO images (filename, data, contentType, createdAt) VALUES (?, ?, ?, ?)'
+  ).bind(filename, base64, file.type, now).run();
 
   return json({ url: `/api/uploads/${filename}` }, 201);
 }
