@@ -190,7 +190,7 @@ export default function Admin() {
       const formData = new FormData()
       formData.append('image', file)
 
-      const res = await fetch('/api/upload', {
+      const res = await fetch('/api/admin/upload', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
         body: formData,

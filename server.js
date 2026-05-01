@@ -204,7 +204,7 @@ app.delete('/api/admin/posts/:slug', auth, (req, res) => {
 });
 
 // ===== Image Upload =====
-app.post('/api/upload', auth, (req, res, next) => {
+const uploadHandler = (req, res, next) => {
   upload.single('image')(req, res, (err) => {
     if (err) {
       return res.status(400).json({ error: err.message });
@@ -215,7 +215,9 @@ app.post('/api/upload', auth, (req, res, next) => {
     const url = `/uploads/${req.file.filename}`;
     res.json({ url, filename: req.file.filename });
   });
-});
+};
+app.post('/api/upload', auth, uploadHandler);
+app.post('/api/admin/upload', auth, uploadHandler);
 
 // ===== Serve Static Files =====
 app.use('/uploads', express.static(UPLOADS_DIR));

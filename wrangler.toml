@@ -1,0 +1,15 @@
+name = "my-blog"
+pages_build_output_dir = "dist"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "blog-db"
+database_id = "YOUR_D1_DATABASE_ID"
+
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "blog-uploads"
+
+[vars]
+JWT_SECRET = "change-this-in-production"
+ADMIN_PASSWORD = "admin123"
