@@ -2,7 +2,7 @@ import { json, error } from '../_utils.js';
 
 export async function onRequestGet(context) {
   const { params, env } = context;
-  const { slug } = params;
+  const slug = decodeURIComponent(params.slug);
 
   const post = await env.DB.prepare(
     'SELECT * FROM posts WHERE slug = ?'

@@ -6,7 +6,7 @@ export async function onRequestPut(context) {
     return error('未授权', 401);
   }
 
-  const { slug } = params;
+  const slug = decodeURIComponent(params.slug);
   const body = await request.json();
 
   const existing = await env.DB.prepare(
@@ -48,7 +48,7 @@ export async function onRequestDelete(context) {
     return error('未授权', 401);
   }
 
-  const { slug } = params;
+  const slug = decodeURIComponent(params.slug);
 
   const existing = await env.DB.prepare(
     'SELECT slug FROM posts WHERE slug = ?'
