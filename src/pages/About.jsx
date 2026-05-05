@@ -23,7 +23,7 @@ export default function About() {
       <div className={styles.page}>
         <div className={styles.header}>
           <div className={styles.avatar}>
-            <img src="/头像1.png" alt="头像" className={styles.avatarImg} />
+            <img src="/头像.png" alt="头像" className={styles.avatarImg} />
           </div>
           <h1 className={styles.name}>林子</h1>
           <p className={styles.bio}>热爱技术与生活的终身学习者</p>

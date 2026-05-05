@@ -31,7 +31,7 @@ export default function Home() {
         <div className="container">
           <div className={styles.heroContent}>
             <div className={styles.avatar}>
-              <img src="/头像1.png" alt="头像" className={styles.avatarImg} />
+              <img src="/头像.png" alt="头像" className={styles.avatarImg} />
             </div>
             <h1 className={styles.heroTitle}>
               你好，我是 <span className="gradient-text">林子</span>

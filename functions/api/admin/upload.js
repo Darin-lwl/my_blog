@@ -1,5 +1,7 @@
 import { json, error, verifyAuth } from '../_utils.js';
 
+const CHUNK_SIZE = 750000; // ~750KB per chunk (base64 stays under 1MB)
+
 export async function onRequestPost(context) {
   const { env, request } = context;
   if (!await verifyAuth(request, env)) {
@@ -20,13 +22,26 @@ export async function onRequestPost(context) {
   }
 
   const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-  const buffer = await file.arrayBuffer();
-  const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
   const now = new Date().toISOString();
+  const buffer = await file.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
 
-  await env.DB.prepare(
-    'INSERT INTO images (filename, data, contentType, createdAt) VALUES (?, ?, ?, ?)'
-  ).bind(filename, base64, file.type, now).run();
+  // Split into chunks
+  const totalChunks = Math.ceil(bytes.length / CHUNK_SIZE);
+  for (let i = 0; i < totalChunks; i++) {
+    const start = i * CHUNK_SIZE;
+    const end = Math.min(start + CHUNK_SIZE, bytes.length);
+    const chunk = bytes.slice(start, end);
+    let binary = '';
+    for (let j = 0; j < chunk.length; j++) {
+      binary += String.fromCharCode(chunk[j]);
+    }
+    const base64 = btoa(binary);
+
+    await env.DB.prepare(
+      'INSERT INTO images (filename, chunk_index, data, contentType, createdAt) VALUES (?, ?, ?, ?, ?)'
+    ).bind(filename, i, base64, file.type, now).run();
+  }
 
   return json({ url: `/api/uploads/${filename}` }, 201);
 }

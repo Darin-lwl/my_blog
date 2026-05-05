@@ -4,8 +4,8 @@ pages_build_output_dir = "dist"
 [[d1_databases]]
 binding = "DB"
 database_name = "blog-db"
-database_id = "YOUR_D1_DATABASE_ID"
+database_id = "5eceb50c-9709-49e6-b1f5-4aa4b2c58111"
 
-[vars]
-JWT_SECRET = "change-this-in-production"
-ADMIN_PASSWORD = "admin123"
+# 敏感配置请通过以下方式设置，不要写在本文件中：
+# 本地开发：创建 .dev.vars 文件（已加入 .gitignore）
+# 生产环境：运行 wrangler pages secret put JWT_SECRET / ADMIN_PASSWORD

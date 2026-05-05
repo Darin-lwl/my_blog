@@ -18,10 +18,14 @@ CREATE TABLE IF NOT EXISTS visits (
 );
 
 CREATE TABLE IF NOT EXISTS images (
-  filename TEXT PRIMARY KEY,
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  filename TEXT NOT NULL,
+  chunk_index INTEGER NOT NULL DEFAULT 0,
   data TEXT NOT NULL,
   contentType TEXT DEFAULT 'image/png',
   createdAt TEXT
 );
+
+CREATE INDEX IF NOT EXISTS idx_images_filename ON images(filename);
 
 INSERT OR IGNORE INTO visits (id, count) VALUES (1, 0);

@@ -11,11 +11,6 @@ import { getAdminPosts, createPost, updatePost, deletePost, logout } from '../ut
 import { formatDate } from '../utils/posts'
 import styles from './Admin.module.css'
 
-function normalizeContent(content) {
-  if (!content) return ''
-  return content.replace(/\n(?!\n)/g, '\n\n')
-}
-
 const emptyForm = {
   title: '',
   date: new Date().toISOString().split('T')[0],
@@ -373,7 +368,7 @@ export default function Admin() {
               </div>
               <div className="markdown-body">
                 <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
-                  {normalizeContent(form.content) || '*暂无内容...*'}
+                  {form.content || '*暂无内容...*'}
                 </ReactMarkdown>
               </div>
             </div>

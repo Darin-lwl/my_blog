@@ -9,11 +9,6 @@ import { formatDate } from '../utils/posts'
 import CommentSection from '../components/CommentSection/CommentSection'
 import styles from './Post.module.css'
 
-function normalizeContent(content) {
-  if (!content) return ''
-  return content.replace(/\n(?!\n)/g, '\n\n')
-}
-
 export default function Post() {
   const { slug } = useParams()
   const { data: post, loading, error } = useFetch(() => getPostBySlug(slug), [slug])
@@ -76,7 +71,7 @@ export default function Post() {
 
         <div className={`${styles.content} markdown-body`}>
           <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
-            {normalizeContent(post.content)}
+            {post.content || ''}
           </ReactMarkdown>
         </div>
 

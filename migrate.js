@@ -1,15 +1,15 @@
-import { readFileSync, readdirSync, writeFileSync } from 'fs';
+import { readFileSync, readdirSync, writeFileSync, mkdirSync, rmSync } from 'fs';
 import { join } from 'path';
 
 const data = JSON.parse(readFileSync(join(process.cwd(), 'data/posts.json'), 'utf-8'));
 const uploadsDir = join(process.cwd(), 'uploads');
+const CHUNK_SIZE = 750000;
 
 console.log('=== 数据迁移脚本 ===\n');
 
-// Generate D1 SQL
+// Posts SQL
 const lines = ['-- D1 数据迁移 SQL', ''];
 
-// Posts
 for (const post of data.posts) {
   const tags = JSON.stringify(post.tags || []);
   const escape = (s) => (s || '').replace(/'/g, "''");
@@ -30,51 +30,59 @@ for (const post of data.posts) {
   lines.push('');
 }
 
-// Init visits counter
 lines.push('INSERT OR IGNORE INTO visits (id, count) VALUES (1, 0);');
-lines.push('');
+writeFileSync('migration.sql', lines.join('\n'));
+console.log(`✅ migration.sql（${data.posts.length} 篇文章 + 计数器）`);
 
-// Images
+// Images - split into chunked SQL files
 try {
   const files = readdirSync(uploadsDir);
   const imageFiles = files.filter(f => /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(f));
 
   if (imageFiles.length > 0) {
-    console.log(`📁 发现 ${imageFiles.length} 个图片文件`);
-    const now = new Date().toISOString();
+    const sqlDir = join(process.cwd(), 'migration_images');
+    try { rmSync(sqlDir, { recursive: true }); } catch {}
+    mkdirSync(sqlDir, { recursive: true });
+
+    console.log(`\n📁 发现 ${imageFiles.length} 个图片，按分块生成 SQL：`);
 
     for (const file of imageFiles) {
       const filePath = join(uploadsDir, file);
       const buffer = readFileSync(filePath);
-      const base64 = buffer.toString('base64');
       const ext = file.split('.').pop().toLowerCase();
       const mime = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp', svg: 'image/svg+xml' }[ext] || 'image/png';
+      const now = new Date().toISOString();
       const escape = (s) => s.replace(/'/g, "''");
 
-      lines.push(`INSERT OR REPLACE INTO images (filename, data, contentType, createdAt) VALUES (`);
-      lines.push(`  '${escape(file)}',`);
-      lines.push(`  '${escape(base64)}',`);
-      lines.push(`  '${mime}',`);
-      lines.push(`  '${now}'`);
-      lines.push(`);`);
-      lines.push('');
-      console.log(`   ✅ ${file} (${(buffer.length / 1024).toFixed(1)} KB)`);
+      const totalChunks = Math.ceil(buffer.length / CHUNK_SIZE);
+      console.log(`   ${file} (${(buffer.length / 1024).toFixed(1)} KB) → ${totalChunks} 块`);
+
+      for (let i = 0; i < totalChunks; i++) {
+        const start = i * CHUNK_SIZE;
+        const end = Math.min(start + CHUNK_SIZE, buffer.length);
+        const chunk = buffer.slice(start, end);
+        const base64 = chunk.toString('base64');
+
+        const sql = `INSERT INTO images (filename, chunk_index, data, contentType, createdAt) VALUES ('${escape(file)}', ${i}, '${escape(base64)}', '${mime}', '${now}');`;
+        const sqlFile = join(sqlDir, `${file}_chunk${i}.sql`);
+        writeFileSync(sqlFile, sql);
+      }
+    }
+
+    console.log(`\n执行图片迁移命令：`);
+    for (const file of imageFiles) {
+      const buffer = readFileSync(join(uploadsDir, file));
+      const totalChunks = Math.ceil(buffer.length / CHUNK_SIZE);
+      for (let i = 0; i < totalChunks; i++) {
+        console.log(`   npx wrangler d1 execute blog-db --remote --file=migration_images/${file}_chunk${i}.sql`);
+      }
     }
   }
 } catch {
-  console.log('📁 uploads/ 目录不存在，跳过图片迁移');
+  console.log('\n📁 uploads/ 目录不存在，跳过图片迁移');
 }
 
-const sql = lines.join('\n');
-writeFileSync('migration.sql', sql);
-console.log(`\n✅ 已生成 migration.sql（${data.posts.length} 篇文章）`);
-
-console.log('\n=== 迁移步骤 ===');
-console.log('1. 在 Cloudflare Dashboard → D1 创建数据库 blog-db');
-console.log('2. 复制数据库 ID，填入 wrangler.toml 的 database_id');
-console.log('3. 建表：npx wrangler d1 execute blog-db --remote --file=schema.sql');
-console.log('4. 迁移数据：npx wrangler d1 execute blog-db --remote --file=migration.sql');
-console.log('5. 推送代码到 GitHub');
-console.log('6. 在 Cloudflare Pages 连接仓库，设置构建命令 npm run build，输出 dist');
-console.log('7. 在 Pages Settings → Variables 中添加 JWT_SECRET 和 ADMIN_PASSWORD');
-console.log('8. 在 Pages Settings → Bindings 中添加 D1 绑定（变量名 DB，选择 blog-db）');
+console.log('\n=== 完整步骤 ===');
+console.log('1. npx wrangler d1 execute blog-db --remote --file=schema.sql');
+console.log('2. npx wrangler d1 execute blog-db --remote --file=migration.sql');
+console.log('3. 逐个执行上面列出的图片分块 SQL');
