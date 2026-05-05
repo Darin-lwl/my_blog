@@ -4,7 +4,7 @@ pages_build_output_dir = "dist"
 [[d1_databases]]
 binding = "DB"
 database_name = "blog-db"
-database_id = "5eceb50c-9709-49e6-b1f5-4aa4b2c58111"
+database_id = "60469428-d10b-4b86-a819-cb7e0c7e3e25"
 
 # 敏感配置请通过以下方式设置，不要写在本文件中：
 # 本地开发：创建 .dev.vars 文件（已加入 .gitignore）
