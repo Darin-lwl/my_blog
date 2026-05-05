@@ -48,7 +48,7 @@ export default function PostCard({ post }) {
         <div className={styles.footer}>
           <div className={styles.author}>
             <img src="/头像.png" alt="作者" className={styles.authorAvatar} />
-            <span className={styles.authorName}>Blogger</span>
+            <span className={styles.authorName}>林子</span>
           </div>
           <span className={styles.footerDate}>{formatDate(date)}</span>
         </div>
