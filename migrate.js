@@ -3,7 +3,7 @@ import { join } from 'path';
 
 const data = JSON.parse(readFileSync(join(process.cwd(), 'data/posts.json'), 'utf-8'));
 const uploadsDir = join(process.cwd(), 'uploads');
-const CHUNK_SIZE = 750000;
+const CHUNK_SIZE = 50000;
 
 console.log('=== 数据迁移脚本 ===\n');
 

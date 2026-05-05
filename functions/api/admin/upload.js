@@ -1,6 +1,6 @@
 import { json, error, verifyAuth } from '../_utils.js';
 
-const CHUNK_SIZE = 750000; // ~750KB per chunk (base64 stays under 1MB)
+const CHUNK_SIZE = 50000; // ~50KB per chunk (base64 stays under D1 statement limit)
 
 export async function onRequestPost(context) {
   const { env, request } = context;
