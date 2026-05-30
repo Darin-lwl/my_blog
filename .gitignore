@@ -19,6 +19,7 @@ migration.sql
 migration_images/
 /uploads/
 .wrangler/
+waline-worker/
 
 # Data files (local development)
 data/posts.json
