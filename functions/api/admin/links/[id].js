@@ -31,7 +31,7 @@ export async function onRequestPut(context) {
   if (avatar !== undefined) { updates.push('avatar = ?'); values.push(avatar); }
   if (description !== undefined) { updates.push('description = ?'); values.push(description); }
   if (visible !== undefined) { updates.push('visible = ?'); values.push(visible ? 1 : 0); }
-  if (order !== undefined) { updates.push('` + '`order`' + ` = ?'); values.push(order); }
+  if (order !== undefined) { updates.push('"order" = ?'); values.push(order); }
 
   if (updates.length === 0) {
     return error('没有要更新的内容');

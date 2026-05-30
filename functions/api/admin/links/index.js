@@ -15,13 +15,13 @@ export async function onRequestGet(context) {
       avatar TEXT DEFAULT '',
       description TEXT DEFAULT '',
       visible INTEGER DEFAULT 1,
-      ` + '`order`' + ` INTEGER DEFAULT 0,
+      "order" INTEGER DEFAULT 0,
       createdAt TEXT DEFAULT (datetime('now'))
     )
   `).run();
 
   const { results } = await env.DB.prepare(
-    'SELECT * FROM links ORDER BY ` + '`order`' + ` ASC, id ASC'
+    'SELECT * FROM links ORDER BY "order" ASC, id ASC'
   ).all();
 
   return json(results.map(l => ({
@@ -56,19 +56,19 @@ export async function onRequestPost(context) {
       avatar TEXT DEFAULT '',
       description TEXT DEFAULT '',
       visible INTEGER DEFAULT 1,
-      ` + '`order`' + ` INTEGER DEFAULT 0,
+      "order" INTEGER DEFAULT 0,
       createdAt TEXT DEFAULT (datetime('now'))
     )
   `).run();
 
   // 获取当前最大排序值
   const { results: maxOrder } = await env.DB.prepare(
-    'SELECT COALESCE(MAX(` + '`order`' + `), -1) as maxOrder FROM links'
+    'SELECT COALESCE(MAX("order"), -1) as maxOrder FROM links'
   ).all();
   const newOrder = (maxOrder[0]?.maxOrder || -1) + 1;
 
   const result = await env.DB.prepare(
-    'INSERT INTO links (name, url, avatar, description, ` + '`order`' + `) VALUES (?, ?, ?, ?, ?)'
+    'INSERT INTO links (name, url, avatar, description, "order") VALUES (?, ?, ?, ?, ?)'
   ).bind(
     name.trim(),
     url.trim(),

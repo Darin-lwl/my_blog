@@ -12,13 +12,13 @@ export async function onRequestGet(context) {
       avatar TEXT DEFAULT '',
       description TEXT DEFAULT '',
       visible INTEGER DEFAULT 1,
-      ` + '`order`' + ` INTEGER DEFAULT 0,
+      "order" INTEGER DEFAULT 0,
       createdAt TEXT DEFAULT (datetime('now'))
     )
   `).run();
 
   const { results } = await env.DB.prepare(
-    'SELECT * FROM links WHERE visible = 1 ORDER BY ` + '`order`' + ` ASC, id ASC'
+    'SELECT * FROM links WHERE visible = 1 ORDER BY "order" ASC, id ASC'
   ).all();
 
   return json(results.map(l => ({

@@ -11,14 +11,14 @@ export async function onRequestGet(context) {
       icon TEXT DEFAULT '📄',
       description TEXT DEFAULT '',
       visible INTEGER DEFAULT 1,
-      ` + '`order`' + ` INTEGER DEFAULT 0,
+      "order" INTEGER DEFAULT 0,
       createdAt TEXT DEFAULT (datetime('now'))
     )
   `).run();
 
   // 获取分类信息
   const { results: categories } = await env.DB.prepare(
-    'SELECT * FROM categories WHERE visible = 1 ORDER BY ` + '`order`' + ` ASC, id ASC'
+    'SELECT * FROM categories WHERE visible = 1 ORDER BY "order" ASC, id ASC'
   ).all();
 
   // 统计每个分类的文章数量

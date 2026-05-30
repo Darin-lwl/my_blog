@@ -14,13 +14,13 @@ export async function onRequestGet(context) {
       icon TEXT DEFAULT '📄',
       description TEXT DEFAULT '',
       visible INTEGER DEFAULT 1,
-      `order` INTEGER DEFAULT 0,
+      "order" INTEGER DEFAULT 0,
       createdAt TEXT DEFAULT (datetime('now'))
     )
   `).run();
 
   const { results } = await env.DB.prepare(
-    'SELECT * FROM categories ORDER BY `order` ASC, id ASC'
+    'SELECT * FROM categories ORDER BY "order" ASC, id ASC'
   ).all();
 
   return json(results.map(c => ({
@@ -50,7 +50,7 @@ export async function onRequestPost(context) {
       icon TEXT DEFAULT '📄',
       description TEXT DEFAULT '',
       visible INTEGER DEFAULT 1,
-      `order` INTEGER DEFAULT 0,
+      "order" INTEGER DEFAULT 0,
       createdAt TEXT DEFAULT (datetime('now'))
     )
   `).run();
@@ -66,13 +66,12 @@ export async function onRequestPost(context) {
 
   // 获取当前最大排序值
   const { results: maxOrder } = await env.DB.prepare(
-    'SELECT COALESCE(MAX(`order`), -1) as maxOrder FROM categories'
+    'SELECT COALESCE(MAX("order"), -1) as maxOrder FROM categories'
   ).all();
   const newOrder = (maxOrder[0]?.maxOrder || -1) + 1;
 
   const result = await env.DB.prepare(
-    `INSERT INTO categories (name, icon, description, ` + '`order`' + `)
-     VALUES (?, ?, ?, ?)`
+    'INSERT INTO categories (name, icon, description, "order") VALUES (?, ?, ?, ?)'
   ).bind(
     name.trim(),
     icon || '📄',
