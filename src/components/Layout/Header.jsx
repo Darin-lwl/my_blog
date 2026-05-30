@@ -10,10 +10,10 @@ export default function Header() {
 
   const navItems = [
     { path: '/', label: '首页' },
-    { path: '/blog', label: '博客' },
-    { path: '/categories', label: '分类' },
-    { path: '/tags', label: '标签' },
-    { path: '/about', label: '关于' },
+    { path: '/blog', label: '拾光集' },
+    { path: '/categories', label: '光阴故事' },
+    { path: '/about', label: '关于我' },
+    { path: '/links', label: '邻里' },
   ]
 
   const isActive = (path) => {
@@ -25,7 +25,7 @@ export default function Header() {
     <header className={styles.header}>
       <div className={`container ${styles.headerInner}`}>
         <Link to="/" className={styles.logo}>
-          <span className="gradient-text">Blog</span>
+          <img src="/logo.png" alt="Logo" className={styles.logoImg} />
         </Link>
 
         <nav className={`${styles.nav} ${menuOpen ? styles.navOpen : ''}`}>

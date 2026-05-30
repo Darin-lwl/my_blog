@@ -51,7 +51,7 @@ export default function Search() {
       <div className={styles.page}>
         <Link to="/blog" className={styles.backLink}>
           <ArrowLeft size={18} />
-          返回博客
+          返回合集
         </Link>
 
         <h1 className={styles.pageTitle}>搜索文章</h1>

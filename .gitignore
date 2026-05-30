@@ -18,6 +18,13 @@ dist-ssr
 migration.sql
 migration_images/
 /uploads/
+.wrangler/
+
+# Data files (local development)
+data/posts.json
+data/comments.json
+data/categories.json
+data/links.json
 
 # Editor directories and files
 .vscode/*

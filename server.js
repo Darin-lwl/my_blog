@@ -14,6 +14,9 @@ const JWT_SECRET = process.env.JWT_SECRET || 'blog-secret-key-change-in-producti
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 
 const DATA_FILE = join(__dirname, 'data', 'posts.json');
+const COMMENTS_FILE = join(__dirname, 'data', 'comments.json');
+const LINKS_FILE = join(__dirname, 'data', 'links.json');
+const CATEGORIES_FILE = join(__dirname, 'data', 'categories.json');
 const UPLOADS_DIR = join(__dirname, 'uploads');
 const SITE_START_DATE = new Date('2024-01-01');
 let visitCount = 0;
@@ -24,6 +27,15 @@ if (!fs.existsSync(join(__dirname, 'data'))) {
 }
 if (!fs.existsSync(DATA_FILE)) {
   fs.writeFileSync(DATA_FILE, JSON.stringify({ posts: [] }, null, 2));
+}
+if (!fs.existsSync(COMMENTS_FILE)) {
+  fs.writeFileSync(COMMENTS_FILE, JSON.stringify([], null, 2));
+}
+if (!fs.existsSync(LINKS_FILE)) {
+  fs.writeFileSync(LINKS_FILE, JSON.stringify([], null, 2));
+}
+if (!fs.existsSync(CATEGORIES_FILE)) {
+  fs.writeFileSync(CATEGORIES_FILE, JSON.stringify([], null, 2));
 }
 if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR);
@@ -58,6 +70,30 @@ function readPosts() {
 
 function writePosts(data) {
   fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+}
+
+function readComments() {
+  return JSON.parse(fs.readFileSync(COMMENTS_FILE, 'utf-8'));
+}
+
+function writeComments(data) {
+  fs.writeFileSync(COMMENTS_FILE, JSON.stringify(data, null, 2));
+}
+
+function readLinks() {
+  return JSON.parse(fs.readFileSync(LINKS_FILE, 'utf-8'));
+}
+
+function writeLinks(data) {
+  fs.writeFileSync(LINKS_FILE, JSON.stringify(data, null, 2));
+}
+
+function readCategories() {
+  return JSON.parse(fs.readFileSync(CATEGORIES_FILE, 'utf-8'));
+}
+
+function writeCategories(data) {
+  fs.writeFileSync(CATEGORIES_FILE, JSON.stringify(data, null, 2));
 }
 
 function generateSlug(title) {
@@ -110,13 +146,32 @@ app.get('/api/posts/:slug', (req, res) => {
 });
 
 app.get('/api/categories', (req, res) => {
+  const categories = readCategories();
   const data = readPosts();
-  const map = {};
-  data.posts.filter(p => !p.draft).forEach(p => {
+  const posts = data.posts.filter(p => !p.draft);
+
+  // 统计每个分类的文章数量
+  const countMap = {};
+  posts.forEach(p => {
     const cat = p.category || '未分类';
-    map[cat] = (map[cat] || 0) + 1;
+    countMap[cat] = (countMap[cat] || 0) + 1;
   });
-  res.json(Object.entries(map).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count));
+
+  // 合并分类信息和文章数量
+  const result = categories
+    .filter(c => c.visible !== false)
+    .map(c => ({
+      ...c,
+      count: countMap[c.name] || 0,
+    }))
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+  // 添加未分类（如果有）
+  if (countMap['未分类']) {
+    result.push({ name: '未分类', icon: '📄', description: '未分类的文章', count: countMap['未分类'] });
+  }
+
+  res.json(result);
 });
 
 app.get('/api/tags', (req, res) => {
@@ -145,7 +200,7 @@ app.get('/api/admin/posts', auth, (req, res) => {
 
 app.post('/api/admin/posts', auth, (req, res) => {
   const data = readPosts();
-  const { title, date, category, tags, summary, content, featured, draft } = req.body;
+  const { title, date, category, tags, summary, content, coverImage, featured, draft } = req.body;
 
   let slug = generateSlug(title);
   const existing = data.posts.map(p => p.slug);
@@ -160,6 +215,7 @@ app.post('/api/admin/posts', auth, (req, res) => {
     tags: Array.isArray(tags) ? tags : [],
     summary: summary || '',
     content: content || '',
+    coverImage: coverImage || '',
     featured: featured || false,
     draft: draft !== false,
     createdAt: new Date().toISOString(),
@@ -176,7 +232,7 @@ app.put('/api/admin/posts/:slug', auth, (req, res) => {
   const idx = data.posts.findIndex(p => p.slug === req.params.slug);
   if (idx === -1) return res.status(404).json({ error: '文章不存在' });
 
-  const { title, date, category, tags, summary, content, featured, draft } = req.body;
+  const { title, date, category, tags, summary, content, coverImage, featured, draft } = req.body;
   data.posts[idx] = {
     ...data.posts[idx],
     ...(title !== undefined && { title }),
@@ -185,6 +241,7 @@ app.put('/api/admin/posts/:slug', auth, (req, res) => {
     ...(tags !== undefined && { tags }),
     ...(summary !== undefined && { summary }),
     ...(content !== undefined && { content }),
+    ...(coverImage !== undefined && { coverImage }),
     ...(featured !== undefined && { featured }),
     ...(draft !== undefined && { draft }),
     updatedAt: new Date().toISOString(),
@@ -200,6 +257,222 @@ app.delete('/api/admin/posts/:slug', auth, (req, res) => {
   if (idx === -1) return res.status(404).json({ error: '文章不存在' });
   data.posts.splice(idx, 1);
   writePosts(data);
+  res.json({ message: '已删除' });
+});
+
+// ===== Comment Routes =====
+app.get('/api/comments', (req, res) => {
+  const { slug } = req.query;
+  if (!slug) return res.status(400).json({ error: '缺少 slug 参数' });
+
+  const comments = readComments();
+  const filtered = comments
+    .filter(c => c.post_slug === slug && c.status === 1)
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  res.json(filtered);
+});
+
+app.post('/api/comments', (req, res) => {
+  const { slug, nickname, content, parentId = 0 } = req.body;
+
+  if (!slug) return res.status(400).json({ error: '缺少文章 slug' });
+  if (!nickname || nickname.trim().length === 0) return res.status(400).json({ error: '请输入昵称' });
+  if (!content || content.trim().length < 2) return res.status(400).json({ error: '评论内容至少 2 个字符' });
+
+  const data = readPosts();
+  const post = data.posts.find(p => p.slug === slug && !p.draft);
+  if (!post) return res.status(404).json({ error: '文章不存在' });
+
+  const comments = readComments();
+  const ip = req.ip || req.connection.remoteAddress || 'unknown';
+
+  // 频率限制
+  const recent = comments.find(c =>
+    c.post_slug === slug && c.nickname === nickname.trim() &&
+    new Date(c.created_at) > new Date(Date.now() - 30000)
+  );
+  if (recent) return res.status(429).json({ error: '请勿频繁提交评论' });
+
+  const comment = {
+    id: Date.now(),
+    post_slug: slug,
+    nickname: nickname.trim(),
+    content: content.trim(),
+    parent_id: parentId,
+    status: 1, // 本地开发默认直接通过
+    created_at: new Date().toISOString(),
+  };
+
+  comments.push(comment);
+  writeComments(comments);
+  res.status(201).json({ id: comment.id, message: '评论已提交' });
+});
+
+// Admin comment routes
+app.get('/api/admin/comments', auth, (req, res) => {
+  const comments = readComments();
+  const data = readPosts();
+  const enriched = comments.map(c => {
+    const post = data.posts.find(p => p.slug === c.post_slug);
+    return { ...c, post_title: post?.title || '未知文章' };
+  }).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  res.json(enriched);
+});
+
+app.put('/api/admin/comments/:id', auth, (req, res) => {
+  const { status } = req.body;
+  if (status !== 0 && status !== 1) return res.status(400).json({ error: '无效的状态值' });
+
+  const comments = readComments();
+  const idx = comments.findIndex(c => c.id === parseInt(req.params.id));
+  if (idx === -1) return res.status(404).json({ error: '评论不存在' });
+
+  comments[idx].status = status;
+  writeComments(comments);
+  res.json({ message: '评论状态已更新' });
+});
+
+app.delete('/api/admin/comments/:id', auth, (req, res) => {
+  const comments = readComments();
+  const idx = comments.findIndex(c => c.id === parseInt(req.params.id));
+  if (idx === -1) return res.status(404).json({ error: '评论不存在' });
+
+  comments.splice(idx, 1);
+  writeComments(comments);
+  res.json({ message: '评论已删除' });
+});
+
+// ===== Links Routes =====
+app.get('/api/links', (req, res) => {
+  const links = readLinks();
+  res.json(links.filter(l => l.visible !== false).sort((a, b) => (a.order || 0) - (b.order || 0)));
+});
+
+app.get('/api/admin/links', auth, (req, res) => {
+  const links = readLinks();
+  res.json(links.sort((a, b) => (a.order || 0) - (b.order || 0)));
+});
+
+app.post('/api/admin/links', auth, (req, res) => {
+  const links = readLinks();
+  const { name, url, avatar, description } = req.body;
+
+  if (!name || !url) {
+    return res.status(400).json({ error: '名称和链接不能为空' });
+  }
+
+  const link = {
+    id: Date.now(),
+    name,
+    url,
+    avatar: avatar || '',
+    description: description || '',
+    visible: true,
+    order: links.length,
+    createdAt: new Date().toISOString(),
+  };
+
+  links.push(link);
+  writeLinks(links);
+  res.status(201).json(link);
+});
+
+app.put('/api/admin/links/:id', auth, (req, res) => {
+  const links = readLinks();
+  const idx = links.findIndex(l => l.id === parseInt(req.params.id));
+  if (idx === -1) return res.status(404).json({ error: '友链不存在' });
+
+  const { name, url, avatar, description, visible, order } = req.body;
+  links[idx] = {
+    ...links[idx],
+    ...(name !== undefined && { name }),
+    ...(url !== undefined && { url }),
+    ...(avatar !== undefined && { avatar }),
+    ...(description !== undefined && { description }),
+    ...(visible !== undefined && { visible }),
+    ...(order !== undefined && { order }),
+  };
+
+  writeLinks(links);
+  res.json(links[idx]);
+});
+
+app.delete('/api/admin/links/:id', auth, (req, res) => {
+  const links = readLinks();
+  const idx = links.findIndex(l => l.id === parseInt(req.params.id));
+  if (idx === -1) return res.status(404).json({ error: '友链不存在' });
+
+  links.splice(idx, 1);
+  writeLinks(links);
+  res.json({ message: '已删除' });
+});
+
+// ===== Categories Routes =====
+app.get('/api/admin/categories', auth, (req, res) => {
+  const categories = readCategories();
+  res.json(categories.sort((a, b) => (a.order || 0) - (b.order || 0)));
+});
+
+app.post('/api/admin/categories', auth, (req, res) => {
+  const categories = readCategories();
+  const { name, icon, description } = req.body;
+
+  if (!name) {
+    return res.status(400).json({ error: '分类名称不能为空' });
+  }
+
+  // 检查名称是否重复
+  if (categories.some(c => c.name === name)) {
+    return res.status(400).json({ error: '分类名称已存在' });
+  }
+
+  const category = {
+    id: Date.now(),
+    name,
+    icon: icon || '📄',
+    description: description || '',
+    visible: true,
+    order: categories.length,
+    createdAt: new Date().toISOString(),
+  };
+
+  categories.push(category);
+  writeCategories(categories);
+  res.status(201).json(category);
+});
+
+app.put('/api/admin/categories/:id', auth, (req, res) => {
+  const categories = readCategories();
+  const idx = categories.findIndex(c => c.id === parseInt(req.params.id));
+  if (idx === -1) return res.status(404).json({ error: '分类不存在' });
+
+  const { name, icon, description, visible, order } = req.body;
+
+  // 检查名称是否重复（排除自身）
+  if (name && categories.some((c, i) => i !== idx && c.name === name)) {
+    return res.status(400).json({ error: '分类名称已存在' });
+  }
+
+  categories[idx] = {
+    ...categories[idx],
+    ...(name !== undefined && { name }),
+    ...(icon !== undefined && { icon }),
+    ...(description !== undefined && { description }),
+    ...(visible !== undefined && { visible }),
+    ...(order !== undefined && { order }),
+  };
+
+  writeCategories(categories);
+  res.json(categories[idx]);
+});
+
+app.delete('/api/admin/categories/:id', auth, (req, res) => {
+  const categories = readCategories();
+  const idx = categories.findIndex(c => c.id === parseInt(req.params.id));
+  if (idx === -1) return res.status(404).json({ error: '分类不存在' });
+
+  categories.splice(idx, 1);
+  writeCategories(categories);
   res.json({ message: '已删除' });
 });
 

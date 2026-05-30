@@ -1,14 +1,12 @@
 import { Link } from 'react-router-dom'
-import { ArrowRight, BookOpen, Tag, Folder, Loader } from 'lucide-react'
+import { Loader } from 'lucide-react'
 import PostCard from '../components/PostCard/PostCard'
 import useFetch from '../hooks/useFetch'
-import { getAllPosts, getAllTags, getAllCategories } from '../utils/api'
+import { getAllPosts } from '../utils/api'
 import styles from './Home.module.css'
 
 export default function Home() {
   const { data: posts, loading } = useFetch(getAllPosts, [])
-  const { data: tags } = useFetch(getAllTags, [])
-  const { data: categories } = useFetch(getAllCategories, [])
 
   if (loading) {
     return (
@@ -20,107 +18,79 @@ export default function Home() {
   }
 
   const allPosts = posts || []
-  const allTags = tags || []
-  const allCategories = categories || []
-  const recentPosts = allPosts.slice(0, 6)
+  const featuredPosts = allPosts.filter(p => p.featured && p.coverImage).slice(0, 3)
+  const recentPosts = allPosts.slice(0, 5)
 
   return (
     <div>
-      {/* Hero Section */}
-      <section className={styles.hero}>
+      {/* Slogan */}
+      <section className={styles.slogan}>
         <div className="container">
-          <div className={styles.heroContent}>
-            <div className={styles.avatar}>
-              <img src="/头像.png" alt="头像" className={styles.avatarImg} />
-            </div>
-            <h1 className={styles.heroTitle}>
-              你好，我是 <span className="gradient-text">林子</span>
-            </h1>
-            <p className={styles.heroSubtitle}>
-              记录技术与生活的点滴，分享学习与成长的感悟
-            </p>
-            <div className={styles.heroActions}>
-              <Link to="/blog" className={styles.btnPrimary}>
-                <BookOpen size={18} />
-                阅读博客
-              </Link>
-              <Link to="/about" className={styles.btnSecondary}>
-                了解更多
-                <ArrowRight size={18} />
-              </Link>
-            </div>
+          <div className={styles.sloganInner}>
+            <p className={styles.sloganText}>"入林，见雅，归苑"</p>
+            <span className={styles.sloganLine} />
           </div>
         </div>
       </section>
 
-      {/* Stats */}
-      <section className={styles.stats}>
-        <div className="container">
-          <div className={styles.statsGrid}>
-            <div className={styles.statCard}>
-              <BookOpen size={24} className={styles.statIcon} />
-              <span className={styles.statNumber}>{allPosts.length}</span>
-              <span className={styles.statLabel}>篇文章</span>
-            </div>
-            <div className={styles.statCard}>
-              <Folder size={24} className={styles.statIcon} />
-              <span className={styles.statNumber}>{allCategories.length}</span>
-              <span className={styles.statLabel}>个分类</span>
-            </div>
-            <div className={styles.statCard}>
-              <Tag size={24} className={styles.statIcon} />
-              <span className={styles.statNumber}>{allTags.length}</span>
-              <span className={styles.statLabel}>个标签</span>
+      {/* Featured */}
+      {featuredPosts.length > 0 && (
+        <section className={styles.featured}>
+          <div className="container">
+            <div className={styles.featuredGrid}>
+              {featuredPosts[0] && (
+                <Link to={`/blog/${featuredPosts[0].slug}`} className={styles.featuredLarge}>
+                  <img src={featuredPosts[0].coverImage} alt={featuredPosts[0].title} />
+                  <h3 className={styles.featuredTitle}>{featuredPosts[0].title}</h3>
+                </Link>
+              )}
+              <div className={styles.featuredRight}>
+                {featuredPosts[1] && (
+                  <Link to={`/blog/${featuredPosts[1].slug}`} className={styles.featuredSmall}>
+                    <img src={featuredPosts[1].coverImage} alt={featuredPosts[1].title} />
+                    <h3 className={styles.featuredTitle}>{featuredPosts[1].title}</h3>
+                  </Link>
+                )}
+                {featuredPosts[2] && (
+                  <Link to={`/blog/${featuredPosts[2].slug}`} className={styles.featuredSmall}>
+                    <img src={featuredPosts[2].coverImage} alt={featuredPosts[2].title} />
+                    <h3 className={styles.featuredTitle}>{featuredPosts[2].title}</h3>
+                  </Link>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      {/* Recent Posts */}
-      <section className={styles.section}>
+      {/* Post List */}
+      <section className={styles.postsSection}>
         <div className="container">
-          <div className={styles.sectionHeader}>
-            <h2 className={styles.sectionTitle}>最新文章</h2>
-            <Link to="/blog" className={styles.viewAll}>
-              查看全部 <ArrowRight size={16} />
-            </Link>
-          </div>
-          <div className={styles.postsGrid}>
-            {recentPosts.map((post) => (
-              <PostCard key={post.slug} post={post} />
-            ))}
-          </div>
-          {allPosts.length === 0 && (
+          {recentPosts.length > 0 ? (
+            <>
+              <div className={styles.postList}>
+                {recentPosts.map((post) => (
+                  <PostCard key={post.slug} post={post} />
+                ))}
+              </div>
+              {allPosts.length > 5 && (
+                <div className={styles.loadMore}>
+                  <Link to="/blog" className={styles.loadMoreBtn}>
+                    点击查看更多
+                  </Link>
+                </div>
+              )}
+            </>
+          ) : (
             <div className={styles.empty}>
               <p>暂无文章，去管理后台写一篇吧！</p>
-              <Link to="/admin" className={styles.btnPrimary} style={{ marginTop: 16 }}>
+              <Link to="/admin" className={styles.emptyBtn}>
                 写文章
               </Link>
             </div>
           )}
         </div>
       </section>
-
-      {/* Tags Cloud */}
-      {allTags.length > 0 && (
-        <section className={styles.section}>
-          <div className="container">
-            <h2 className={styles.sectionTitle}>热门标签</h2>
-            <div className={styles.tagsCloud}>
-              {allTags.map((tag) => (
-                <Link
-                  key={tag.name}
-                  to={`/tags/${tag.name}`}
-                  className={styles.tagChip}
-                >
-                  {tag.name}
-                  <span className={styles.tagCount}>{tag.count}</span>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
     </div>
   )
 }

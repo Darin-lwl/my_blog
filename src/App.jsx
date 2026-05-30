@@ -5,7 +5,7 @@ import Home from './pages/Home'
 import Blog from './pages/Blog'
 import Post from './pages/Post'
 import Categories from './pages/Categories'
-import Tags from './pages/Tags'
+import Links from './pages/Links'
 import About from './pages/About'
 import Search from './pages/Search'
 import Admin from './pages/Admin'
@@ -27,8 +27,7 @@ function App() {
         <Route path="blog/:slug" element={<Post />} />
         <Route path="categories" element={<Categories />} />
         <Route path="categories/:category" element={<Blog />} />
-        <Route path="tags" element={<Tags />} />
-        <Route path="tags/:tag" element={<Blog />} />
+        <Route path="links" element={<Links />} />
         <Route path="about" element={<About />} />
         <Route path="search" element={<Search />} />
         <Route path="admin/login" element={<Login />} />

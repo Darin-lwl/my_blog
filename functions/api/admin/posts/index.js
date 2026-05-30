@@ -27,14 +27,14 @@ export async function onRequestPost(context) {
   }
 
   const body = await request.json();
-  const { title, category, tags, summary, content, featured, draft } = body;
+  const { title, category, tags, summary, content, coverImage, featured, draft } = body;
 
   const slug = await generateSlug(title, env.DB);
   const now = new Date().toISOString();
 
   await env.DB.prepare(
-    `INSERT INTO posts (slug, title, date, category, tags, summary, content, featured, draft, createdAt, updatedAt)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO posts (slug, title, date, category, tags, summary, content, coverImage, featured, draft, createdAt, updatedAt)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
     slug,
     title || '未命名',
@@ -43,6 +43,7 @@ export async function onRequestPost(context) {
     parseTags(tags),
     summary || '',
     content || '',
+    coverImage || '',
     featured ? 1 : 0,
     draft !== false ? 1 : 0,
     now,

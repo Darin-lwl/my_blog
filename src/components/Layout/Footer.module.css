@@ -12,15 +12,13 @@
   gap: 16px;
 }
 
-.copyright {
-  font-size: 0.9rem;
-  color: var(--text-secondary);
+.logoLink {
+  display: inline-block;
 }
 
-.slogan {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  margin-top: 4px;
+.logoImg {
+  height: 32px;
+  width: auto;
 }
 
 .links {
@@ -63,5 +61,9 @@
   .footerInner {
     flex-direction: column;
     text-align: center;
+  }
+
+  .left {
+    align-items: center;
   }
 }

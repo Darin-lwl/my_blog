@@ -30,7 +30,7 @@ export default function Post() {
           <p>抱歉，你访问的文章不存在。</p>
           <Link to="/blog" className={styles.backLink}>
             <ArrowLeft size={18} />
-            返回博客列表
+            返回合集
           </Link>
         </div>
       </div>
@@ -75,7 +75,7 @@ export default function Post() {
           </ReactMarkdown>
         </div>
 
-        <CommentSection />
+        <CommentSection slug={post.slug} />
       </article>
     </div>
   )

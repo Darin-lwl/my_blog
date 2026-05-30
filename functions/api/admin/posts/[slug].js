@@ -18,20 +18,21 @@ export async function onRequestPut(context) {
   }
 
   const now = new Date().toISOString();
-  const { title, category, tags, summary, content, featured, draft } = body;
+  const { title, category, tags, summary, content, coverImage, featured, draft } = body;
 
   const current = await env.DB.prepare(
     'SELECT * FROM posts WHERE slug = ?'
   ).bind(slug).first();
 
   await env.DB.prepare(
-    `UPDATE posts SET title = ?, category = ?, tags = ?, summary = ?, content = ?, featured = ?, draft = ?, date = ?, updatedAt = ? WHERE slug = ?`
+    `UPDATE posts SET title = ?, category = ?, tags = ?, summary = ?, content = ?, coverImage = ?, featured = ?, draft = ?, date = ?, updatedAt = ? WHERE slug = ?`
   ).bind(
     title ?? current.title,
     category ?? current.category,
     tags !== undefined ? parseTags(tags) : current.tags,
     summary ?? current.summary,
     content ?? current.content,
+    coverImage ?? current.coverImage,
     featured !== undefined ? (featured ? 1 : 0) : current.featured,
     draft !== undefined ? (draft ? 1 : 0) : current.draft,
     body.date ?? current.date,
